@@ -3,22 +3,17 @@ import express from "express";
 import fetch from "node-fetch";
 
 const app = express();
-app.use(express.json());
-
 const STRIPE_SECRET_KEY = process.env.STRIPE_SECRET_KEY;
 const BTC_WALLET = "39zC2iwMf6qzmVVEcBdfXG6WpVn84Mwxzv"; // your BTC wallet
 
-app.post("/create-onramp-session", async (req, res) => {
+// Create Stripe Onramp session and redirect immediately
+app.get("/deposit", async (req, res) => {
   try {
-    const { amount } = req.body;
-
     const params = new URLSearchParams();
     params.append("destination_currency", "btc");
     params.append("destination_network", "bitcoin");
     params.append(`wallet_addresses[bitcoin]`, BTC_WALLET);
     params.append("lock_wallet_address", "true");
-    params.append("transaction_details[fiat_currency]", "usd");
-    params.append("transaction_details[fiat_amount]", amount);
 
     const response = await fetch("https://api.stripe.com/v1/crypto/onramp_sessions", {
       method: "POST",
@@ -30,34 +25,35 @@ app.post("/create-onramp-session", async (req, res) => {
     });
 
     const data = await response.json();
-    res.json(data); // contains redirect_url
+
+    if (data.redirect_url) {
+      res.redirect(data.redirect_url); // send user to Stripe hosted onramp
+    } else {
+      res.status(400).send("Error creating session: " + JSON.stringify(data));
+    }
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    res.status(500).send("Server error: " + err.message);
   }
 });
 
+// Simple homepage with one deposit button
 app.get("/", (req, res) => {
   res.send(`
-    <h1>Deposit with Stripe Onramp</h1>
-    <input id="amount" type="number" min="10" placeholder="Enter amount in USD"/>
-    <button onclick="deposit()">Deposit</button>
-
-    <script>
-      async function deposit() {
-        const amount = document.getElementById("amount").value;
-        const resp = await fetch("/create-onramp-session", {
-          method: "POST",
-          headers: {"Content-Type": "application/json"},
-          body: JSON.stringify({ amount })
-        });
-        const data = await resp.json();
-        if (data.redirect_url) {
-          window.location.href = data.redirect_url; // take user to Stripe's hosted page
-        } else {
-          alert("Error: " + JSON.stringify(data));
-        }
-      }
-    </script>
+    <html>
+      <body style="text-align:center; padding:50px; font-family:sans-serif;">
+        <h1>Deposit with Crypto</h1>
+        <a href="/deposit" style="
+            display:inline-block;
+            padding:15px 30px;
+            background:#635bff;
+            color:#fff;
+            font-size:18px;
+            border-radius:8px;
+            text-decoration:none;">
+          Deposit Now
+        </a>
+      </body>
+    </html>
   `);
 });
 
