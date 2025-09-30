@@ -6,7 +6,7 @@ const app = express();
 const STRIPE_SECRET_KEY = process.env.STRIPE_SECRET_KEY;
 const BTC_WALLET = "39zC2iwMf6qzmVVEcBdfXG6WpVn84Mwxzv"; // your BTC wallet
 
-// Create Stripe Onramp session and redirect immediately
+// Route that creates a Stripe Onramp session and redirects user
 app.get("/deposit", async (req, res) => {
   try {
     const params = new URLSearchParams();
@@ -27,7 +27,7 @@ app.get("/deposit", async (req, res) => {
     const data = await response.json();
 
     if (data.redirect_url) {
-      res.redirect(data.redirect_url); // send user to Stripe hosted onramp
+      res.redirect(data.redirect_url); // take user to Stripe's hosted onramp
     } else {
       res.status(400).send("Error creating session: " + JSON.stringify(data));
     }
@@ -36,7 +36,7 @@ app.get("/deposit", async (req, res) => {
   }
 });
 
-// Simple homepage with one deposit button
+// Simple homepage with a Deposit button
 app.get("/", (req, res) => {
   res.send(`
     <html>
@@ -57,5 +57,7 @@ app.get("/", (req, res) => {
   `);
 });
 
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log("Running on " + PORT));
+// Fly.io requires listening on 0.0.0.0 and PORT=8080
+const PORT = process.env.PORT || 8080;
+const HOST = "0.0.0.0";
+app.listen(PORT, HOST, () => console.log(`✅ Running on ${HOST}:${PORT}`));
