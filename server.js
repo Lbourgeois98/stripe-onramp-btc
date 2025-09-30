@@ -1,60 +1,13 @@
 // server.js
 import express from "express";
 import fetch from "node-fetch";
-import path from "path";
 
 const app = express();
 app.use(express.json());
 
-const STRIPE_SECRET_KEY = process.env.STRIPE_SECRET_KEY; // put in Fly.io secrets
-const BTC_WALLET = "39zC2iwMf6qzmVVEcBdfXG6WpVn84Mwxzv"; // your BTC address
+const STRIPE_SECRET_KEY = process.env.STRIPE_SECRET_KEY;
+const BTC_WALLET = "39zC2iwMf6qzmVVEcBdfXG6WpVn84Mwxzv"; // your BTC wallet
 
-// Serve the deposit page
-app.get("/", (req, res) => {
-  res.send(`
-    <!DOCTYPE html>
-    <html>
-      <head>
-        <title>Deposit with Stripe</title>
-      </head>
-      <body style="font-family: sans-serif; text-align: center; padding: 50px;">
-        <h1>Deposit</h1>
-        <input id="depositAmount" type="number" placeholder="Enter amount (USD)" min="10"
-          style="padding: 10px; font-size: 16px; width: 200px; text-align: center" />
-        <br><br>
-        <button id="depositBtn" style="padding: 12px 24px; font-size: 16px">Deposit</button>
-
-        <script>
-          document.getElementById("depositBtn").addEventListener("click", async () => {
-            const amount = document.getElementById("depositAmount").value;
-            if (!amount || amount <= 0) {
-              alert("Please enter a valid amount.");
-              return;
-            }
-
-            try {
-              const resp = await fetch("/create-onramp-session", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ amount }),
-              });
-              const data = await resp.json();
-              if (data.redirect_url) {
-                window.location.href = data.redirect_url;
-              } else {
-                alert("Error: " + JSON.stringify(data));
-              }
-            } catch (err) {
-              alert("Error: " + err.message);
-            }
-          });
-        </script>
-      </body>
-    </html>
-  `);
-});
-
-// Stripe Onramp session endpoint
 app.post("/create-onramp-session", async (req, res) => {
   try {
     const { amount } = req.body;
@@ -77,11 +30,36 @@ app.post("/create-onramp-session", async (req, res) => {
     });
 
     const data = await response.json();
-    res.json(data);
+    res.json(data); // contains redirect_url
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });
 
+app.get("/", (req, res) => {
+  res.send(`
+    <h1>Deposit with Stripe Onramp</h1>
+    <input id="amount" type="number" min="10" placeholder="Enter amount in USD"/>
+    <button onclick="deposit()">Deposit</button>
+
+    <script>
+      async function deposit() {
+        const amount = document.getElementById("amount").value;
+        const resp = await fetch("/create-onramp-session", {
+          method: "POST",
+          headers: {"Content-Type": "application/json"},
+          body: JSON.stringify({ amount })
+        });
+        const data = await resp.json();
+        if (data.redirect_url) {
+          window.location.href = data.redirect_url; // take user to Stripe's hosted page
+        } else {
+          alert("Error: " + JSON.stringify(data));
+        }
+      }
+    </script>
+  `);
+});
+
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log("Server running on port " + PORT));
+app.listen(PORT, () => console.log("Running on " + PORT));
