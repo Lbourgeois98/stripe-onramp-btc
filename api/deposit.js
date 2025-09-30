@@ -1,10 +1,6 @@
-// api/deposit.js
-const fetch = require("node-fetch");
-
+// No imports needed, native fetch used
 module.exports = async (req, res) => {
-  if (req.method !== "GET") {
-    return res.status(405).json({ error: "Method not allowed" });
-  }
+  if (req.method !== "GET") return res.status(405).json({ error: "Method not allowed" });
 
   try {
     const BTC_WALLET = "39zC2iwMf6qzmVVEcBdfXG6WpVn84Mwxzv";
@@ -21,7 +17,7 @@ module.exports = async (req, res) => {
         Authorization: `Bearer ${process.env.STRIPE_SECRET_KEY}`,
         "Content-Type": "application/x-www-form-urlencoded",
       },
-      body: params,
+      body: params.toString(),
     });
 
     const data = await response.json();
