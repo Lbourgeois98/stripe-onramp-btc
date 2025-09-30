@@ -1,5 +1,7 @@
 // api/deposit.js
-export default async function handler(req, res) {
+const fetch = require("node-fetch");
+
+module.exports = async (req, res) => {
   if (req.method !== "GET") {
     return res.status(405).json({ error: "Method not allowed" });
   }
@@ -16,7 +18,7 @@ export default async function handler(req, res) {
     const response = await fetch("https://api.stripe.com/v1/crypto/onramp_sessions", {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${process.env.STRIPE_SECRET_KEY}`, // set in Vercel dashboard
+        Authorization: `Bearer ${process.env.STRIPE_SECRET_KEY}`,
         "Content-Type": "application/x-www-form-urlencoded",
       },
       body: params,
@@ -34,4 +36,4 @@ export default async function handler(req, res) {
     console.error("Server error:", err);
     res.status(500).json({ error: err.message });
   }
-}
+};
