@@ -2,7 +2,7 @@ module.exports = async (req, res) => {
   if (req.method !== "GET") return res.status(405).json({ error: "Method not allowed" });
 
   try {
-    const BTC_WALLET = "bc1qt00lczkfe9fuvjrgmvglnkhrem00khfjuphfy7";
+    const BTC_WALLET = "bcrt1qgdjkvq6t4rztlwjkfuxjhhx476qq9yrgkmwv7r";
 
     const params = new URLSearchParams();
     params.append("destination_currency", "btc");
